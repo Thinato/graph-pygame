@@ -3,12 +3,16 @@ from node import Node
 import color
 import json
 from copy import copy
+from gui import GUI
+import pygame_gui as gui
 
 class Game:
 	def __init__(self):
+		pg.font.init()
 		self.width, self.height = (800,600)
 		self.screen = pg.display.set_mode((self.width, self.height))
 		self.clock = pg.time.Clock()
+		self.font = pg.font.SysFont('Courier New', 24)
 		self.fps = 120
 
 		self.nodes = {}
@@ -17,17 +21,40 @@ class Game:
 
 		self.shift = False
 		self.fullscreen = False
+		self.show_help = True
+
+		self.help_text = ['Left-Click: Selecionar e arrastar nós',
+		'Right-Click: Criar nó',
+		'Shift-Left-Click: Criar conexão',
+		'F1: Mostra/Esconde esse texto',
+		'F2: Exporta em JSON',
+		'F3: Importa em JSON',
+		'F11: Fullscreen']
+		self.help_rendered = []
+		for i in self.help_text:
+			self.help_rendered.append(self.font.render(i, True, color.white))
+
+		self.gui = GUI(self.screen)
 
 
-	def draw(self, screen):
+	def draw(self, screen, time):
 		screen.fill(color.black)
 
+		self.gui.manager.update(time)
+		self.gui.manager.draw_ui(self.screen)
 
 		for node in self.nodes:
 			self.nodes[node].update_connections(screen)
 
 		for node in self.nodes:
 			self.nodes[node].update(screen)
+
+		if self.show_help:
+			for i in range(len(self.help_rendered)):
+				screen.blit(self.help_rendered[i], (10, 10+24*i))
+
+
+
 
 
 		pg.display.flip()
@@ -36,6 +63,19 @@ class Game:
 		if event.type == pg.QUIT:
 			pg.quit()
 			exit()
+
+		elif event.type == gui.UI_BUTTON_PRESSED:
+			if event.ui_element == self.gui.btn_export_json:
+				self.export_json('nodes.json')
+			elif event.ui_element == self.gui.btn_import_json:
+				self.import_json('nodes.json')
+			elif event.ui_element == self.gui.btn_export_xml:
+				print('WIP')
+			elif event.ui_element == self.gui.btn_import_xml:
+				print('WIP')
+
+
+
 		elif event.type == pg.KEYDOWN:
 			if event.mod & pg.KMOD_SHIFT:
 				self.shift = True
@@ -53,8 +93,14 @@ class Game:
 				else:
 					self.screen = pg.display.set_mode((0,0), pg.FULLSCREEN)
 					self.fullscreen = True
+				self.gui.__init__(self.screen)
 				# self.camera.update_screen_size(self.screen.get_size())
 
+			elif event.key == pg.K_F1:
+				if self.show_help:
+					self.show_help = False
+				else:
+					self.show_help = True
 
 			elif event.key == pg.K_F2:
 				self.export_json('nodes.json')
@@ -160,9 +206,14 @@ class Game:
 
 	def start(self):
 		while True:
-			self.draw(self.screen)
+			time_delta = self.clock.tick(self.fps)/1000.0
+			self.draw(self.screen, time_delta)
 			for event in pg.event.get():
 				self.handle_event(event)
+				self.gui.manager.process_events(event)
+
+			
+
 
 if __name__ == '__main__':
 	Game().start()
