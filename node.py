@@ -1,9 +1,10 @@
 import pygame as pg
 import math
 import color
+from copy import copy
 
 class Node:
-	def __init__(self, pos, name='Node'):
+	def __init__(self, pos, index, name='Node'):
 		pg.font.init()
 
 		self._circle_cache = {}
@@ -11,11 +12,13 @@ class Node:
 		self.font = pg.font.SysFont('Segoe UI', self.font_size)
 
 		self.name_width = 0
-		self.name = self.render(name, self.font, color.white)
+		self.index = index
+		self.name = name
+		self.name_render = self.render(name, self.font, color.white)
 		self.x = pos[0]
 		self.y = pos[1]
 		self.radius = 20
-		self.connections = []
+		self.connections = {}
 		self.connecting = False
 		self.selected = True
 
@@ -23,7 +26,7 @@ class Node:
 
 	def update_connections(self, screen):
 		for connection in self.connections:
-			pg.draw.line(screen, color.white, (self.x, self.y), (connection.x, connection.y))
+			pg.draw.line(screen, color.white, (self.x, self.y), (self.connections[connection].x, self.connections[connection].y))
 
 	def update(self, screen):
 		if self.selected:
@@ -38,13 +41,20 @@ class Node:
 
 		pg.draw.circle(screen, color.white, (self.x, self.y), self.radius)
 
-		screen.blit(self.name, (self.x - self.name_width//2, self.y - self.font_size))
+		screen.blit(self.name_render, (self.x - self.name_width//2, self.y - self.font_size))
 
 	def check_connections(self, deleted_node):
-		for node in self.connections:
-			if node == deleted_node:
-				self.connections.remove(node)
+		for connection in self.connections:
+			if self.connections[connection] == deleted_node:
+				del self.connections[connection]
 
+	def to_dict(self):
+		connections = copy(self.connections)
+		for conn in connections:
+			connections[conn] = 0
+
+
+		return {'name':self.name, 'x':self.x, 'y':self.y, 'radius':self.radius, 'connections':connections}
 
 	def _circlepoints(self, r):
 		r = int(round(r))
