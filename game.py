@@ -81,9 +81,9 @@ class Game:
 				self.shift = True
 
 			elif event.key == pg.K_DELETE:
-				self.nodes.remove(self.selected_node)
+				self.nodes.pop(self.selected_node.index, None)
 				for node in self.nodes:
-					node.check_connections(self.selected_node)
+					self.nodes[node].check_connections(self.selected_node)
 				self.selected_node = None
 
 			elif event.key == pg.K_F11:
